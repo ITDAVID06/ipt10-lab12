@@ -20,7 +20,8 @@ global $conn;
     $router->get('/login', '\App\Controllers\ExamController@loginForm');
     $router->post('/login', '\App\Controllers\ExamController@login');
 
-    $router->get('/examinees', '\App\Controllers\ExamController@displayExaminees');
+    $router->get('/examinees', '\App\Controllers\ExamController@displayExamAttempts');
+    $router->get('/export-attempt-pdf/{attempt_id}', 'ExamController@exportToPDF');  
 
     $router->get('/exam', '\App\Controllers\ExamController@exam');
     $router->post('/exam', '\App\Controllers\ExamController@exam');

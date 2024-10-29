@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Exam Attempts</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+            padding: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Exam Attempts</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Attempt Date</th>
+                <th>Examinee Name</th>
+                <th>Email</th>
+                <th>Exam Items</th>
+                <th>Total Score</th>
+                <th>Export to PDF</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#attempts}}
+                <tr>
+                    <td>{{attempt_date}}</td>
+                    <td>{{complete_name}}</td>
+                    <td>{{email}}</td>
+                    <td>{{exam_items}}</td>
+                    <td>{{score}}</td>
+                    <td>
+                        <a href="/export-attempt-pdf/{{attempt_id}}" target="_blank">
+                            Export to PDF
+                        </a>
+                    </td>
+                </tr>
+            {{/attempts}}
+        </tbody>
+    </table>
+</body>
+</html>
