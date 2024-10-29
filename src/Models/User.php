@@ -7,12 +7,17 @@ use \PDO;
 
 class User extends BaseModel
 {
+    public function getDbConnection()
+    {
+        return $this->db;
+    }
+    
     public function save($data) {
         $sql = "INSERT INTO users 
                 SET
                     complete_name=:complete_name,
                     email=:email,
-                    `password`=:password_hash";        
+                    password_hash=:password_hash";        
         $statement = $this->db->prepare($sql);
         $password_hash = $this->hashPassword($data['password']);
         $statement->execute([
@@ -20,8 +25,14 @@ class User extends BaseModel
             'email' => $data['email'],
             'password_hash' => $password_hash
         ]);
-    
-        return $statement->rowCount();
+
+        $lastInsertId = $this->db->lastInsertId();
+
+
+         return [
+        'row_count' => $statement->rowCount(),
+        'last_insert_id' => $lastInsertId
+    ];
     }
 
     protected function hashPassword($password)
@@ -52,5 +63,6 @@ class User extends BaseModel
         $result = $statement->fetchAll(PDO::FETCH_ASSOC);
         return $result;
     }
+    
 
 }

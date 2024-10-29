@@ -4,9 +4,18 @@ namespace App\Controllers;
 
 use App\Models\Question;
 use App\Models\UserAnswer;
+use App\Models\User;
+use \PDO;
 
 class ExamController extends BaseController
 {
+    public function loginForm()
+    {
+        $this->initializeSession();
+
+        return $this->render('login-form');
+    }
+
     public function registrationForm()
     {
         $this->initializeSession();
@@ -19,15 +28,66 @@ class ExamController extends BaseController
         $this->initializeSession();
         $data = $_POST;
         // Save the registration to database
-        $_SESSION['user_id'] = 1; // Replace this literal value with the actual user ID from new registration
-        $_SESSION['complete_name'] = $data['complete_name'];
-        $_SESSION['email'] = $data['email'];
+        $user = new User();
+        $result = $user->save($data);
 
-        return $this->render('pre-exam', $data);
+        if ($result['row_count'] > 0) {
+           
+            $_SESSION['user_id'] = $result['last_insert_id']; 
+            $_SESSION['complete_name'] = $data['complete_name'];
+            $_SESSION['email'] = $data['email'];
+            $_SESSION['password'] = $data['password'];
+    
+           
+            return $this->render('login-form', $data);
+
+        }
+    }
+
+    public function login(){
+        $this->initializeSession();
+    
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $data = $_POST;
+
+        // Create an instance of the User model
+        $user = new User();
+        
+        // Verify user credentials
+        if ($user->verifyAccess($data['email'], $data['password'])) {
+            // Fetch user data using the method we just created
+            $sql = "SELECT id, complete_name, email FROM users WHERE email = :email";
+            $statement = $user->getDbConnection()->prepare($sql); // Use getDbConnection() instead of accessing $db directly
+            $statement->execute(['email' => $data['email']]);
+            $userData = $statement->fetch(PDO::FETCH_ASSOC);
+            
+            // Store user data in session
+            $_SESSION['user_id'] = $userData['id'];
+            $_SESSION['complete_name'] = $userData['complete_name'];
+            $_SESSION['email'] = $userData['email'];
+
+            // Prepare data for the pre-exam Mustache template
+            $templateData = [
+                'complete_name' => $userData['complete_name'],
+                'email' => $userData['email'],
+            ];
+
+            // Render the pre-exam page with user data
+            return $this->render('pre-exam', $templateData); // Pass user data to Mustache template
+        } else {
+            // Handle invalid login (optional)
+            $_SESSION['error'] = "Invalid email or password.";
+            return $this->render('login'); // Show login form again
+        }
+    }
+
+    // If not a POST request, show the login form
+    return $this->render('login'); // Show login form
     }
 
     public function exam()
     {
+        
         $this->initializeSession();
         $item_number = 1;
 
@@ -59,13 +119,15 @@ class ExamController extends BaseController
             error_log('ANSWERS = ' . $json_answers);
 
             $userAnswerObj = new UserAnswer();
-            $userAnswerObj->save(
-                $user_id,
-                $json_answers
-            );
             $score = $questionObj->computeScore($_SESSION['answers']);
             $items = $questionObj->getTotalQuestions();
-            $userAnswerObj->saveAttempt($user_id, $items, $score);
+            $attempt_Id = $userAnswerObj->saveAttempt($user_id, $items, $score);
+            $userAnswerObj->save(
+                $user_id,
+                $json_answers,
+                $attempt_Id
+            );
+            
 
             header("Location: /result");
             exit;
@@ -93,5 +155,10 @@ class ExamController extends BaseController
         session_destroy();
 
         return $this->render('result', $data);
+    }
+
+    public function displayExaminees(){
+        
+
     }
 }
